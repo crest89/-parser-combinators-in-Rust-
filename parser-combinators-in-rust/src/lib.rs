@@ -31,7 +31,18 @@ pub fn character(c: char) -> impl Parser<()> {
         }
     })
 }
-
+// パーサーを受け取って、先頭の空白を読み飛ばすようにしたパーサーを返す
 pub fn lexeme<T>(parser: impl Parser<T>) -> impl Parser<T> {
     generalize_lifetime(move |s| parser(s.trim_start()))
+}
+// 特定の文字列をパースするパーサー
+pub fn string(target: &'static str) -> impl Parser<()> {
+    generalize_lifetime(move |s| s.strip_prefix(target).map(|rest| ((), rest)))
+}
+
+#[test]
+fn test_string() {
+    let parser = string("hello");
+    assert_eq!(parser("hello world"), Some(((), " world")));
+    assert_eq!(parser("hell world"), None);
 }
