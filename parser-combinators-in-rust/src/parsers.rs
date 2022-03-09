@@ -77,3 +77,30 @@ fn test_choice_macro() {
     assert_eq!(parser("42"), Some((42, "")));
     assert_eq!(parser("hoge"), None);
 }
+
+pub fn join<A, B>(parser1: impl Parser<A>, parser2: impl Parser<B>) -> impl Parser<(A, B)> {
+    generalize_lifetime(move |s| {
+        parser1(s).and_then(|(value1, rest1)| {
+            parser2(rest1).map(|(value2, rest2)| ((value1, value2), rest2))
+        })
+    })
+}
+
+#[macro_export]
+macro_rules! join {
+    ($parser0:expr, $($parser:expr),*) => {{
+        let p = $parser0;
+        $(
+            let p = $crate::parsers::join(p, $parser);
+        )*
+        p
+    }};
+}
+
+#[test]
+fn test_join_macro() {
+    // スペース区切りで数値をちょうど3つ受け付けるパーサー
+    let parser = join![lexeme(digits), lexeme(digits), lexeme(digits)];
+    assert_eq!(parser("10 20 30"), Some((((10, 20), 30), "")));
+    assert_eq!(parser("10 20 AA"), None);
+}
