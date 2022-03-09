@@ -31,3 +31,7 @@ pub fn character(c: char) -> impl Parser<()> {
         }
     })
 }
+
+pub fn lexeme<T>(parser: impl Parser<T>) -> impl Parser<T> {
+    generalize_lifetime(move |s| parser(s.trim_start()))
+}
