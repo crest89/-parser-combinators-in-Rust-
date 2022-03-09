@@ -46,3 +46,7 @@ fn test_string() {
     assert_eq!(parser("hello world"), Some(((), " world")));
     assert_eq!(parser("hell world"), None);
 }
+// パースの結果に関数を適用する: map
+pub fn map<A, B>(parser: impl Parser<A>, f: impl Fn(A) -> B) -> impl Parser<B> {
+    generalize_lifetime(move |s| parser(s).map(|(value, rest)| (f(value), rest)))
+}
