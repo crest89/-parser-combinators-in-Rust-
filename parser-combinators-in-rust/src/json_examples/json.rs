@@ -135,3 +135,26 @@ fn key_value(s: &str) -> Option<((String, Value), &str)> {
     let p = parsers::map(p, |((key, _), value)| (key, value));
     p(s)
 }
+
+// jsonのパースをまとめる
+fn json_value(s: &str) -> Option<(Value, &str)> {
+    crate::choice![
+        null,
+        false_,
+        true_,
+        number,
+        json_string,
+        array,
+        object
+    ](s)
+}
+
+pub fn parse(s: &str) -> Option<Value> {
+    json_value(s).and_then(|(value, rest)|{
+        if rest.chars().all(|c| c.is_ascii_whitespace()) {
+            Some(value)
+        } else {
+            None
+        }
+    })
+}
