@@ -104,3 +104,22 @@ fn test_join_macro() {
     assert_eq!(parser("10 20 30"), Some((((10, 20), 30), "")));
     assert_eq!(parser("10 20 AA"), None);
 }
+
+pub fn many<T>(parser: impl Parser<T>) -> impl Parser<Vec<T>> {
+    generalize_lifetime(move |mut s| {
+        let mut ret = vec![];
+        while let Some((value, rest)) = parser(s) {
+            ret.push(value);
+            s = rest;
+        }
+        Some((ret, s))
+    })
+}
+
+#[test]
+fn test_many() {
+    let parser = many(lexeme(digits));
+    assert_eq!(parser("10 20 30"), Some((vec![10, 20, 30], "")));
+    assert_eq!(parser(""), Some((vec![], "")));
+    assert_eq!(parser("10 hello"), Some((vec![10], " hello")));
+}
