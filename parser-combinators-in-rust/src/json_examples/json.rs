@@ -37,3 +37,11 @@ fn true_(s: &str) -> Option<(Value, &str)> {
     let p = parsers::map(p, |_| Value::True);
     p(s)
 }
+
+// numberのパーサー
+fn number(s: &str) -> Option<(Value, &str)> {
+    const PATTERN: &str = r"^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?";
+    let p = crate::regex!(PATTERN, |s| s.parse::<f64>().ok());
+    let p = parsers::lexeme(p);
+    let p = parsers::map(p, |x| Value::Number(x));
+}
