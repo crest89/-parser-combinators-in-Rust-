@@ -158,3 +158,75 @@ pub fn parse(s: &str) -> Option<Value> {
         }
     })
 }
+
+#[test]
+fn test_string() {
+    assert_eq!(
+        json_string(r#""hello, world!!""#),
+        Some((Value::String("hello, world!!".to_string()), "")),
+    )
+}
+
+#[test]
+fn test_json() {
+    assert_eq!(
+        parse(r#"null"#),
+        Some(Value::Null),
+    );
+    assert_eq!(
+        parse(r#"true"#),
+        Some(Value::True),
+    );
+    assert_eq!(
+        parse(r#"false"#),
+        Some(Value::False),
+    );
+    assert_eq!(
+        parse(r#"nulll"#),
+        None,
+    );
+    assert_eq!(
+        parse(r#"nnull"#),
+        None,
+    );
+
+    assert_eq!(
+        parse(r#"0"#),
+        Some(Value::Number(0.0)),
+    );
+    assert_eq!(
+        parse(r#"3.14"#),
+        Some(Value::Number(3.14)),
+    );
+    assert_eq!(
+        parse(r#"-3.14"#),
+        Some(Value::Number(-3.14)),
+    );
+
+    assert_eq!(
+        parse(r#"  "Hello World!!"  "#),
+        Some(Value::String("Hello World!!".to_owned())),
+    );
+    assert_eq!(
+        parse(r#"  "Hello\nWorld\r\n"  "#),
+        Some(Value::String("Hello\nWorld\r\n".to_owned())),
+    );
+    assert_eq!(
+        parse(r#"  "Hello\x"  "#),
+        None,
+    );
+
+
+    assert_eq!(
+        parse(r#"  []  "#),
+        Some(Value::Array(vec![])),
+    );
+    assert_eq!(
+        parse(r#"  [1, "hello"]  "#),
+        Some(Value::Array(vec![Value::Number(1.0), Value::String("hello".to_owned())])),
+    );
+    assert_eq!(
+        parse(r#"  [1, "hello",]  "#),
+        None,
+    );
+}
