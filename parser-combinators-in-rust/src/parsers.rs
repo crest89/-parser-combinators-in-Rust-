@@ -1,3 +1,8 @@
+// [dependencies]
+// regex = "1"
+
+use regex::Regex;
+
 // クロージャの型推論を補助するための関数
 // cf. https://github.com/rust-lang/rust/issues/70263#issuecomment-623169045
 fn generalize_lifetime<T, F>(f: F) -> F
@@ -164,4 +169,26 @@ fn test_separated() {
     let parser = separated(digits, character(','));
     assert_eq!(parser("1,2,3"), Some((vec![1, 2, 3], "")));
     assert_eq!(parser(""), Some((vec![], "")));
+}
+
+// 正規表現パーサー: regex
+pub fn regex<'a, T>(re: &'a Regex, f: impl Fn(&str) -> Option<T> + 'a) -> impl Parser<T> + 'a {
+    generalize_lifetime(move |s| {
+        re.find(s).and_then(|matched| {
+            f(matched.as_str()).map(|value| {
+                let rest = &s[matched.end()..];
+                (value, rest)
+            })
+        })
+    })
+}
+
+#[macro_export]
+macro_rules! regex {
+    ($pattern:expr, $f:expr) => {{
+        use once_call::sync::Lazy;
+        use regex::Regex;
+        static RE: Lazy<Regex> = Lazy::new(|| Regex::new($pattern).unwrap());
+        $crate::parsers::regex(&RE, $f)
+    }};
 }
