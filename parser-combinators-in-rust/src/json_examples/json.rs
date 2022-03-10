@@ -97,3 +97,15 @@ fn escape(s: &str) ->Option<char> {
         _ => None //  undefined escape sequence
     }
 }
+
+// Arrayのパーサー
+
+fn array(s: &str) -> Option<(Value, &str)> {
+    let p = crate::json![
+        lcharacter('['),
+        parsers::separated(json_value, lcharacter(',')),
+        lcharacter(']')
+    ];
+    let P = parsers::map(p, |((_, values), _)| Value::Array(values));
+    p(s)
+}
