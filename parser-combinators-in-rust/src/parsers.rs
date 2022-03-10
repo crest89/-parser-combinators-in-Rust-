@@ -78,6 +78,7 @@ fn test_choice_macro() {
     assert_eq!(parser("hoge"), None);
 }
 
+// パーサーを連結する: join
 pub fn join<A, B>(parser1: impl Parser<A>, parser2: impl Parser<B>) -> impl Parser<(A, B)> {
     generalize_lifetime(move |s| {
         parser1(s).and_then(|(value1, rest1)| {
@@ -105,6 +106,7 @@ fn test_join_macro() {
     assert_eq!(parser("10 20 AA"), None);
 }
 
+// 0回以上の繰り返し: many
 pub fn many<T>(parser: impl Parser<T>) -> impl Parser<Vec<T>> {
     generalize_lifetime(move |mut s| {
         let mut ret = vec![];
@@ -122,4 +124,44 @@ fn test_many() {
     assert_eq!(parser("10 20 30"), Some((vec![10, 20, 30], "")));
     assert_eq!(parser(""), Some((vec![], "")));
     assert_eq!(parser("10 hello"), Some((vec![10], " hello")));
+}
+
+// 何かで区切られた列: separated
+pub fn separated<T>(parser: impl Parser<T>, separator: impl Parser<()>) -> impl Parser<Vec<T>> {
+    generalize_lifetime(move |mut s| {
+        let mut ret = vec![];
+
+        match parser(s) {
+            Some((value, rest)) => {
+                ret.push(value);
+                s = rest;
+            }
+            None => {
+                return Some((ret, s));
+            }
+        }
+
+        while let Some((_, rest)) = separator(s) {
+            s = rest;
+            match parser(s) {
+                Some((value, rest)) => {
+                    ret.push(value);
+                    s = rest;
+                }
+                None => {
+                    return None;
+                }
+            }
+        }
+
+        Some((ret, s))
+    })
+}
+
+#[test]
+fn test_separated() {
+    // カンマ区切りの数値のパーサー
+    let parser = separated(digits, character(','));
+    assert_eq!(parser("1,2,3"), Some((vec![1, 2, 3], "")));
+    assert_eq!(parser(""), Some((vec![], "")));
 }
