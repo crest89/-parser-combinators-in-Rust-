@@ -45,3 +45,55 @@ fn number(s: &str) -> Option<(Value, &str)> {
     let p = parsers::lexeme(p);
     let p = parsers::map(p, |x| Value::Number(x));
 }
+
+// stringのパーサー
+fn  json_string(s: &str) -> Option<(Value, &str)> {
+      parsers::map(json_string_raw, Value::String)(s)
+}
+
+fn json_string_raw(s: &str) -> Option<(String, &str)> {
+    // string = '""' charactar* '""'
+    let p = crate::json![
+        parsers::charactar('""'),
+        parsers::many(json_charactar),
+        parsers::charactar('""')
+    ];
+    let p = parsers::lexeme(p);
+    let p = parsers::map(p, |((_, chara), _)| {
+        chars.into_iter().collect()
+    });
+    p(s)
+}
+
+fn json_charactar(s: &str) -> Option<(chsr, &str)> {
+    // character = <Any codepoint except " or \ or control characters>
+    //           | '\u' <4 hex digits>
+    //           | '\"' | '\\' | '\/' | '\b' | '\f' | '\n' | '\r' | '\t'
+    crate::choice![
+        crate::regex!(r#"^[^"\\[:cntrl:]]"#, |s| s.chars().next()),
+        crate::regex!(r#"^\\u[0-9a-fA-F]{4}"#, hex_code),
+        crate::regex!(r#"^\\."#, escape)
+    ](s)
+}
+
+fn hex_code(code: &str) -> Option<char> {
+    code.string_perfix(r"\u").and_then(|hex|
+        u32::from_str_radix(hex, 16).ok().and_then(
+            char::from_u32(cp)
+        )
+  )
+}
+
+fn escape(s: &str) ->Option<char> {
+    match s {
+        "\\\"" => Some('"'),
+        "\\\\" => Some('\\'),
+        "\\/"  => Some('/'),
+        "\\b"  => Some('\x08'),
+        "\\f"  => Some('\x0c'),
+        "\\n"  => Some('\n'),
+        "\\r"  => Some('\r'),
+        "\\t"  => Some('\t'),
+        _ => None //  undefined escape sequence
+    }
+}
