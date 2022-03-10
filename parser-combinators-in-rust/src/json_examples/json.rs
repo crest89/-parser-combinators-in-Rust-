@@ -26,7 +26,14 @@ fn null(s: &str) -> Option<(Value, &str)> {
     p(s)
 }
 
-fn false(s: &str) -> Option<(Value, &str)> {
+fn false_(s: &str) -> Option<(Value, &str)> {
     let p = lstring("false");
+    let p = parsers::map(p, |_| Value::False);
+    p(s)
+}
 
+fn true_(s: &str) -> Option<(Value, &str)> {
+    let p = lstring("true");
+    let p = parsers::map(p, |_| Value::True);
+    p(s)
 }
