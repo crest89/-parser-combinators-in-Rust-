@@ -109,3 +109,29 @@ fn array(s: &str) -> Option<(Value, &str)> {
     let P = parsers::map(p, |((_, values), _)| Value::Array(values));
     p(s)
 }
+
+// Object
+
+fn object(s: &str) -> Option<(Value, &str)> {
+    let p = crate::json![
+        lcharacter('{'),
+        parsers::separated(key_value, lcharacter(',')),
+        lcharacter('}')
+    ];
+    let p = parsers::map(p, |((_, key_values), _)| {
+        let h = HashMap::from_iter(key_values.into_iter());
+        Value::Object(h)
+    });
+    p(s)
+}
+
+fn key_value(s: &str) -> Option<((String, Value), &str)> {
+    // key_value = string ':' json_value
+    let p = crate::json![
+        json_string_raw,
+        lcharacter(':'),
+        jdon_value
+    ];
+    let p = parsers::map(p, |((key, _), value)| (key, value));
+    p(s)
+}
